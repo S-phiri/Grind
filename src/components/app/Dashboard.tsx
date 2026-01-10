@@ -1,42 +1,95 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Dumbbell, Calendar, TrendingUp, Flame, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Dumbbell, Calendar, TrendingUp, Flame, CheckCircle2, Target, AlertCircle, ArrowRight } from "lucide-react";
+import { dashboardApi } from "@/lib/api";
+import { toast } from "sonner";
 
-const upcomingSessions = [
-  {
-    id: 1,
-    title: "Upper Body Strength",
-    type: "Gym",
-    time: "Today, 6:00 PM",
-    duration: "60 min",
-    completed: false,
-  },
-  {
-    id: 2,
-    title: "Speed & Agility",
-    type: "Field",
-    time: "Tomorrow, 10:00 AM",
-    duration: "45 min",
-    completed: false,
-  },
-  {
-    id: 3,
-    title: "Recovery & Mobility",
-    type: "Mobility",
-    time: "Tomorrow, 7:00 PM",
-    duration: "30 min",
-    completed: false,
-  },
-];
-
-const stats = [
-  { label: "Sessions Completed", value: "24", change: "+12%", icon: CheckCircle2 },
-  { label: "Current Streak", value: "7", unit: "days", icon: Flame },
-  { label: "Total Hours", value: "18.5", unit: "hrs", icon: TrendingUp },
-];
+interface DashboardSummary {
+  total_sessions_completed: number;
+  my_compliance: number;
+  current_streak: number;
+  my_progress: Array<{
+    metric_type: 'strength' | 'speed';
+    start_value: number;
+    end_value: number;
+    pct_change: number;
+  }>;
+}
 
 export function Dashboard() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await dashboardApi.getSummary();
+      setSummary(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pb-24 noise-texture flex items-center justify-center">
+        <Spinner className="w-8 h-8 text-[#00FF88]" />
+      </div>
+    );
+  }
+
+  if (error && !summary) {
+    return (
+      <div className="min-h-screen pb-24 noise-texture">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="glassy-panel border-white/10 p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="font-display text-xl text-white mb-2">Error loading dashboard</h3>
+            <p className="text-gray-400 mb-4">{error}</p>
+            <Button onClick={loadDashboardData} className="bg-[#00FF88] hover:bg-[#00FF88]/90 text-[#0F1419]">
+              Try Again
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = [
+    { 
+      label: "Sessions Completed", 
+      value: summary?.total_sessions_completed.toString() || "0", 
+      icon: CheckCircle2 
+    },
+    { 
+      label: "Current Streak", 
+      value: summary?.current_streak.toString() || "0", 
+      unit: "days", 
+      icon: Flame 
+    },
+    { 
+      label: "My Compliance", 
+      value: summary?.my_compliance.toFixed(1) || "0", 
+      unit: "%", 
+      icon: Target 
+    },
+  ];
+
   return (
     <div className="min-h-screen pb-24 noise-texture">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -54,11 +107,6 @@ export function Dashboard() {
             <Card key={stat.label} className="glassy-panel border-white/10 p-6 hover:scale-[1.02] transition-all">
               <div className="flex items-center justify-between mb-4">
                 <stat.icon className="w-8 h-8 text-[#00FF88]" />
-                {stat.change && (
-                  <Badge className="bg-[#00FF88]/20 text-[#00FF88] border-none">
-                    {stat.change}
-                  </Badge>
-                )}
               </div>
               <div className="space-y-1">
                 <div className="flex items-baseline gap-2">
@@ -75,6 +123,30 @@ export function Dashboard() {
           ))}
         </div>
 
+        {/* Navigation Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Button
+            onClick={() => navigate("/app/sessions")}
+            className="bg-[#00FF88] hover:bg-[#00FF88]/90 text-[#0F1419] font-semibold h-auto p-6 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5" />
+              <span>View Sessions</span>
+            </div>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+          <Button
+            onClick={() => navigate("/app/leaders")}
+            className="bg-[#00FF88] hover:bg-[#00FF88]/90 text-[#0F1419] font-semibold h-auto p-6 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-5 h-5" />
+              <span>Leaderboards</span>
+            </div>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+
         {/* Weekly Progress */}
         <Card className="glassy-panel border-white/10 p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -82,74 +154,67 @@ export function Dashboard() {
               <h2 className="font-display text-2xl text-white mb-1">
                 Weekly Progress
               </h2>
-              <p className="text-sm text-gray-400">5 of 6 sessions completed</p>
+              <p className="text-sm text-gray-400">
+                My compliance: {summary?.my_compliance.toFixed(1) || "0"}%
+              </p>
             </div>
             <div className="text-right">
-              <div className="font-mono-data text-3xl text-[#00FF88]">83%</div>
+              <div className="font-mono-data text-3xl text-[#00FF88]">
+                {summary?.my_compliance.toFixed(0) || "0"}%
+              </div>
               <div className="text-xs text-gray-400">Completion</div>
             </div>
           </div>
-          <Progress value={83} className="h-3 mb-4" />
-          
-          {/* Week Calendar */}
-          <div className="grid grid-cols-7 gap-2 mt-6">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
-              <div
-                key={day}
-                className={`text-center p-3 rounded-lg transition-all ${
-                  index < 5
-                    ? 'bg-[#00FF88]/20 border border-[#00FF88]/50'
-                    : 'bg-white/5 border border-white/10'
-                }`}
-              >
-                <div className="text-xs text-gray-400 mb-1">{day}</div>
-                <div className="font-mono-data text-sm text-white">
-                  {index + 9}
-                </div>
-                {index < 5 && (
-                  <CheckCircle2 className="w-4 h-4 text-[#00FF88] mx-auto mt-1" />
-                )}
-              </div>
-            ))}
-          </div>
+          <Progress value={summary?.my_compliance || 0} className="h-3 mb-4" />
         </Card>
 
-        {/* Upcoming Sessions */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl text-white">Upcoming Sessions</h2>
-            <Calendar className="w-5 h-5 text-[#00FF88]" />
-          </div>
-          <div className="space-y-3">
-            {upcomingSessions.map((session) => (
-              <Card
-                key={session.id}
-                className="glassy-panel border-white/10 p-5 hover:scale-[1.01] transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 rounded-xl bg-[#00FF88]/10 flex items-center justify-center group-hover:bg-[#00FF88]/20 transition-colors">
-                      <Dumbbell className="w-6 h-6 text-[#00FF88]" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white mb-1">
-                        {session.title}
-                      </h3>
-                      <div className="flex items-center gap-3 text-sm text-gray-400">
-                        <span>{session.time}</span>
-                        <span>•</span>
-                        <span>{session.duration}</span>
+        {/* My Progress */}
+        {summary && summary.my_progress.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-2xl text-white">My Progress</h2>
+              <TrendingUp className="w-5 h-5 text-[#00FF88]" />
+            </div>
+            <div className="space-y-3">
+              {summary.my_progress.map((progress, index) => (
+                <Card
+                  key={`${progress.metric_type}-${index}`}
+                  className="glassy-panel border-white/10 p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-xl bg-[#00FF88]/10 flex items-center justify-center">
+                        {progress.metric_type === 'strength' ? (
+                          <Dumbbell className="w-6 h-6 text-[#00FF88]" />
+                        ) : (
+                          <TrendingUp className="w-6 h-6 text-[#00FF88]" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white mb-1 capitalize">
+                          {progress.metric_type} Performance
+                        </h3>
+                        <div className="flex items-center gap-3 text-sm text-gray-400">
+                          <span>
+                            {progress.start_value.toFixed(1)} → {progress.end_value.toFixed(1)}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <div className={`font-mono-data text-2xl ${
+                        progress.pct_change >= 0 ? 'text-[#00FF88]' : 'text-[#FF6B35]'
+                      }`}>
+                        {progress.pct_change >= 0 ? '+' : ''}{progress.pct_change.toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-gray-400">improvement</div>
+                    </div>
                   </div>
-                  <Badge className="bg-[#FF6B35]/20 text-[#FF6B35] border-none">
-                    {session.type}
-                  </Badge>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

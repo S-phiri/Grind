@@ -4,7 +4,7 @@ import { SessionDetail } from "@/components/app/SessionDetail";
 import { ProgressTracker } from "@/components/app/ProgressTracker";
 import { Profile } from "@/components/app/Profile";
 import { BottomNav } from "@/components/app/BottomNav";
-import { ProgrammesGrid } from "@/components/marketing/ProgrammesGrid";
+import { MyProgrammes } from "@/components/app/MyProgrammes";
 
 export default function AppLayout() {
   const [activeTab, setActiveTab] = useState("home");
@@ -14,17 +14,7 @@ export default function AppLayout() {
       case "home":
         return <Dashboard />;
       case "programmes":
-        return (
-          <div className="pb-24">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <h1 className="font-display text-4xl sm:text-5xl text-white mb-2">
-                Programmes
-              </h1>
-              <p className="text-gray-400 mb-8">Choose your next training block</p>
-            </div>
-            <ProgrammesGrid />
-          </div>
-        );
+        return <MyProgrammes />;
       case "progress":
         return <ProgressTracker />;
       case "profile":
