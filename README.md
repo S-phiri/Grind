@@ -1,23 +1,42 @@
-# Grind — Football Performance Training Platform
+# Grind
 
-A premium, mobile-first web platform for elite football performance training combining a public marketing site with an authenticated training app.
+Performance training for footballers. A player completes an intake, gets a structured programme built from templates, logs sessions and metrics, and tracks progress against a squad leaderboard.
 
 ## Features
 
-### Marketing Site (Public)
-- **Hero Section**: Full-width cinematic training imagery with dual CTAs
-- **How It Works**: Four-step horizontal card flow explaining the training process
-- **Programmes Grid**: Glassy cards showcasing training types with intensity tags
-- **Social Proof**: Testimonial carousel with player avatars and quotes
-- **Pricing Tiers**: Three-column comparison table with feature checkmarks
-- **Footer**: Multi-column layout with newsletter signup
+- **Player intake → programme:** intake answers (position, level, goals, training days, equipment, competition schedule) generate a draft programme from reusable programme templates.
+- **Workout recommendations:** on-demand standalone workouts by focus area, which can be saved straight into the training calendar as sessions.
+- **Session and metric logging:** sets, reps and tempo per exercise; strength and speed metrics over time.
+- **Dashboard:** weekly calendar, streaks, upcoming sessions and progress charts.
+- **Leaderboards** across players.
+- **Analytics dashboard** (`analytics_dashboard.py`, Streamlit): correlation between strength and speed metrics from training data.
 
-### Training App (Authenticated)
-- **Dashboard**: Weekly training calendar, progress rings, upcoming sessions, streak counter
-- **Session Detail**: Exercise list with sets/reps/tempo, video thumbnails, timer interface
-- **Progress Tracker**: Line charts for strength/speed metrics, body composition trends
-- **Profile**: User stats, training history, achievement badges, settings
-- **Bottom Navigation**: Five-tab mobile nav for easy navigation
+## Architecture
+
+| Layer | Technology |
+|---|---|
+| Frontend | React, TypeScript, Vite, Tailwind, shadcn/ui, Recharts |
+| API | Django, Django REST Framework (`backend/api`) |
+| Analytics | Streamlit, pandas, SciPy |
+
+**Domain model:** `Player` · `PlayerIntake` · `ProgrammeTemplate` · `PlayerProgramme` · `Session` · `Metric` · `Leaderboard`
+
+**Key endpoints** (under `/api/`): `players`, `sessions`, `metrics`, `leaderboards`, `intake`, `programme-templates`, `programmes`, `players/<id>/programmes/draft/`, `workouts/recommend/`, `workouts/generate/`, `dashboard/summary/`, plus `auth/login|signup|logout`.
+
+## Run locally
+
+```bash
+# API
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate && python manage.py runserver
+
+# Frontend (repo root, new terminal)
+npm install && npm run dev
+```
+
+See `backend/SETUP_GUIDE.md` for seeding and troubleshooting.
 
 ## Design System
 
@@ -38,36 +57,6 @@ A premium, mobile-first web platform for elite football performance training com
 - Custom glow effects for interactive elements
 - Smooth transitions with cubic-bezier easing (0.4, 0.0, 0.2, 1)
 
-## Routes
-
-- `/` - Marketing site homepage
-- `/login` - Authentication page
-- `/app` - Main dashboard (authenticated)
-- `/app/session/:id` - Session detail view
-
-## Tech Stack
-
-- **Framework**: Vite + React + TypeScript
-- **Styling**: Tailwind CSS with custom utilities
-- **UI Components**: shadcn/ui (Radix UI primitives)
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **Routing**: React Router v6
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
 ## Design Principles
 
 Every element should feel like it belongs in a high-performance training facility — clinical, precise, and built for serious athletes. The platform avoids playful or casual design choices, focusing on calculated improvement through data-driven training.
-
